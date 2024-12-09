@@ -1,56 +1,68 @@
-import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.152.0/build/three.module.js';
-import { FontLoader } from 'https://cdn.jsdelivr.net/npm/three@0.152.0/examples/jsm/loaders/FontLoader.js';
-import { TextGeometry } from 'https://cdn.jsdelivr.net/npm/three@0.152.0/examples/jsm/geometries/TextGeometry.js';
-import { OrbitControls } from 'https://cdn.jsdelivr.net/npm/three@0.152.0/examples/jsm/controls/OrbitControls.js';
+import * as THREE from "three";
+import { FontLoader } from "three/examples/jsm/loaders/FontLoader.js";
+import { TextGeometry } from "three/examples/jsm/geometries/TextGeometry.js";
 
-// Scene, Camera, Renderer
+const canvas = document.getElementById("three-canvas");
+
+// Scene setup
 const scene = new THREE.Scene();
+scene.background = new THREE.Color("#000000");
+
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-camera.position.z = 5;
+camera.position.z = 10;
 
-const renderer = new THREE.WebGLRenderer();
+// Renderer setup
+const renderer = new THREE.WebGLRenderer({ antialias: true, canvas });
 renderer.setSize(window.innerWidth, window.innerHeight);
-document.body.appendChild(renderer.domElement);
 
-// Lighting
-const light = new THREE.PointLight(0xffffff, 1);
-light.position.set(10, 10, 10);
-scene.add(light);
+// Lighting setup
+const ambientLight = new THREE.AmbientLight(0xffffff, 0.5); // Soft white light
+scene.add(ambientLight);
 
-// Controls
-const controls = new OrbitControls(camera, renderer.domElement);
+const pointLight = new THREE.PointLight(0xffffff, 1, 50);
+pointLight.position.set(10, 10, 10);
+scene.add(pointLight);
 
-// Load font and create text meshes
-const loader = new FontLoader();
-loader.load('https://cdn.jsdelivr.net/npm/three@0.152.0/examples/fonts/helvetiker_regular.typeface.json', (font) => {
-    // Alphabet Text ("F")
-    const textGeometryF = new TextGeometry('F', {
-        font: font,
-        size: 1,
-        depth: 0.2,
-        curveSegments: 12,
+// Function to create text material
+const createCharacterMaterial = (baseColor, isMetallic) => {
+  return new THREE.MeshStandardMaterial({
+    color: baseColor,
+    metalness: isMetallic ? 1.0 : 0.2,
+    roughness: isMetallic ? 0.2 : 0.8,
+  });
+};
+
+// Load font and add text meshes
+const fontLoader = new FontLoader();
+fontLoader.load("https://threejs.org/examples/fonts/helvetiker_regular.typeface.json", (font) => {
+  const textMaterial = createCharacterMaterial("#F5BD02", false); // Set color to #F5BD02
+
+  const createText = (text, material, position) => {
+    const textGeometry = new TextGeometry(text, {
+      font,
+      size: 2.5,
+      height: 0.2,
     });
-    const materialF = new THREE.MeshStandardMaterial({ color: 0x00ff00 });
-    const meshF = new THREE.Mesh(textGeometryF, materialF);
-    meshF.position.set(-2, 0, 0); // Position "F" to the left
-    scene.add(meshF);
+    const textMesh = new THREE.Mesh(textGeometry, material);
+    textMesh.position.set(...position);
+    scene.add(textMesh);
+  };
 
-    // Digit Text ("8")
-    const textGeometry8 = new TextGeometry('8', {
-        font: font,
-        size: 1,
-        depth: 0.2,
-        curveSegments: 12,
-    });
-    const material8 = new THREE.MeshStandardMaterial({ color: 0xff0000 });
-    const mesh8 = new THREE.Mesh(textGeometry8, material8);
-    mesh8.position.set(2, 0, 0); // Position "8" to the right
-    scene.add(mesh8);
+  // Display "F" and "8"
+  createText("F", textMaterial, [-3, 0, 0]);
+  createText("8", textMaterial, [3, 0, 0]);
 });
 
-// Render Loop
+// Animation loop
 function animate() {
-    requestAnimationFrame(animate);
-    renderer.render(scene, camera);
+  requestAnimationFrame(animate);
+  renderer.render(scene, camera);
 }
 animate();
+
+// Handle resizing
+window.addEventListener("resize", () => {
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+});
