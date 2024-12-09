@@ -53,22 +53,77 @@ glowCube.position.set(0, 0, 0); // Center position
 glowCube.scale.set(2, 2, 2);
 scene.add(glowCube);
 
-// References for text meshes
-let textFMesh, text8Mesh;
+// Custom ShaderMaterial logic for text meshes
+const calculateAmbientIntensity = (lastThreeDigits) => {
+  const abc = lastThreeDigits + 200;
+  return abc / 1000; // Convert to ambient intensity (0.abc)
+};
 
-// Function to create text material
+// Using lastThreeDigits = 188
+const ambientIntensity = calculateAmbientIntensity(188);
+
 const createCharacterMaterial = (baseColor, isMetallic) => {
-  return new THREE.MeshStandardMaterial({
-    color: baseColor,
-    metalness: isMetallic ? 1.0 : 0.2,
-    roughness: isMetallic ? 0.2 : 0.8,
+  return new THREE.ShaderMaterial({
+    uniforms: {
+      lightPosition: { value: glowCube.position }, // Position of the light source (glowing cube)
+      viewPosition: { value: camera.position }, // Position of the camera/viewer
+      baseColor: { value: new THREE.Color(baseColor) }, // Base color of the material
+      ambientIntensity: { value: ambientIntensity }, // Ambient light intensity
+      shininess: { value: isMetallic ? 100.0 : 50.0 }, // Shininess for specular reflection
+    },
+    vertexShader: `
+      varying vec3 vNormal;
+      varying vec3 vPosition;
+
+      void main() {
+        vNormal = normalize(normalMatrix * normal); 
+        vPosition = (modelMatrix * vec4(position, 1.0)).xyz; 
+        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); 
+      }
+    `,
+    fragmentShader: `
+      uniform vec3 lightPosition;
+      uniform vec3 viewPosition;
+      uniform vec3 baseColor;
+      uniform float ambientIntensity;
+      uniform float shininess;
+
+      varying vec3 vNormal;
+      varying vec3 vPosition;
+
+      void main() {
+        // Ambient lighting
+        vec3 ambient = ambientIntensity * baseColor;
+
+        // Diffuse lighting
+        vec3 lightDir = normalize(lightPosition - vPosition);
+        float diff = max(dot(vNormal, lightDir), 0.0);
+        vec3 diffuse = diff * baseColor;
+
+        // Specular lighting
+        vec3 viewDir = normalize(viewPosition - vPosition);
+        vec3 reflectDir = reflect(-lightDir, vNormal);
+        float spec = pow(max(dot(viewDir, reflectDir), 0.0), shininess);
+        vec3 specular = (shininess > 50.0 ? baseColor : vec3(1.0)) * spec;
+
+        // Combine lighting components
+        vec3 color = ambient + diffuse + specular;
+        gl_FragColor = vec4(color, 1.0);
+      }
+    `,
   });
 };
+
+// References for text meshes
+let textFMesh, text8Mesh;
 
 // Load font and add text meshes
 const fontLoader = new FontLoader();
 fontLoader.load("https://threejs.org/examples/fonts/helvetiker_regular.typeface.json", (font) => {
-  const textMaterial = createCharacterMaterial("#F5BD02", false); // Set color to #F5BD02
+  // Create the material for "F" with color #F5BD02
+  const textMaterialF = createCharacterMaterial("#F5BD02", false);
+  // Create the material for "8" with color #023af5
+  const textMaterial8 = createCharacterMaterial("#023af5", false);
 
   const createText = (text, material) => {
     const textGeometry = new TextGeometry(text, {
@@ -80,8 +135,8 @@ fontLoader.load("https://threejs.org/examples/fonts/helvetiker_regular.typeface.
   };
 
   // Create "F" and "8" meshes
-  textFMesh = createText("F", textMaterial);
-  text8Mesh = createText("8", textMaterial);
+  textFMesh = createText("F", textMaterialF);
+  text8Mesh = createText("8", textMaterial8);
 
   // Initial positions
   textFMesh.position.set(-3, 0, 0);
