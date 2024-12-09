@@ -147,6 +147,25 @@ fontLoader.load("https://threejs.org/examples/fonts/helvetiker_regular.typeface.
   scene.add(text8Mesh);
 });
 
+// Event handlers for cube and camera movement
+const handleKeyDown = (event) => {
+  switch (event.key) {
+    case "w":
+      glowCube.position.y += 0.1; // Move cube up
+      break;
+    case "s":
+      glowCube.position.y -= 0.1; // Move cube down
+      break;
+    case "a":
+      camera.position.x += 0.1; // Move camera left
+      break;
+    case "d":
+      camera.position.x -= 0.1; // Move camera right
+      break;
+  }
+};
+window.addEventListener("keydown", handleKeyDown);
+
 // Animation loop
 function animate() {
   requestAnimationFrame(animate);
