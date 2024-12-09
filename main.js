@@ -20,8 +20,38 @@ const ambientLight = new THREE.AmbientLight(0xffffff, 0.5); // Soft white light
 scene.add(ambientLight);
 
 const pointLight = new THREE.PointLight(0xffffff, 1, 50);
-pointLight.position.set(10, 10, 10);
+pointLight.position.set(0, 0, 0); // Centered with the cube
 scene.add(pointLight);
+
+// Glowing Cube ShaderMaterial
+const glowCubeMaterial = new THREE.ShaderMaterial({
+  vertexShader: `
+    // Pass the position of each vertex to the fragment shader
+    varying vec3 vPosition;
+    void main() {
+      vPosition = position; // Pass the local position of the vertex
+      gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); // Transform vertex to screen space
+    }
+  `,
+  fragmentShader: `
+    // Receive the interpolated position from the vertex shader
+    varying vec3 vPosition;
+
+    void main() {
+      // Constant glow color for the cube
+      vec3 glowColor = vec3(1.0, 1.0, 1.0); // White color for glowing effect
+      gl_FragColor = vec4(glowColor, 1.0); // Output the final color
+    }
+  `,
+});
+
+// Glowing cube (light source)
+const glowCubeGeometry = new THREE.BoxGeometry(0.5, 0.5, 0.5);
+const glowCube = new THREE.Mesh(glowCubeGeometry, glowCubeMaterial);
+glowCube.position.set(0, 0, 0); // Center position
+// Ubah ukuran cube menggunakan skala
+glowCube.scale.set(2, 2, 2);
+scene.add(glowCube);
 
 // References for text meshes
 let textFMesh, text8Mesh;
