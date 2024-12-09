@@ -23,6 +23,9 @@ const pointLight = new THREE.PointLight(0xffffff, 1, 50);
 pointLight.position.set(10, 10, 10);
 scene.add(pointLight);
 
+// References for text meshes
+let textFMesh, text8Mesh;
+
 // Function to create text material
 const createCharacterMaterial = (baseColor, isMetallic) => {
   return new THREE.MeshStandardMaterial({
@@ -37,20 +40,26 @@ const fontLoader = new FontLoader();
 fontLoader.load("https://threejs.org/examples/fonts/helvetiker_regular.typeface.json", (font) => {
   const textMaterial = createCharacterMaterial("#F5BD02", false); // Set color to #F5BD02
 
-  const createText = (text, material, position) => {
+  const createText = (text, material) => {
     const textGeometry = new TextGeometry(text, {
       font,
       size: 2.5,
       height: 0.2,
     });
-    const textMesh = new THREE.Mesh(textGeometry, material);
-    textMesh.position.set(...position);
-    scene.add(textMesh);
+    return new THREE.Mesh(textGeometry, material);
   };
 
-  // Display "F" and "8"
-  createText("F", textMaterial, [-3, 0, 0]);
-  createText("8", textMaterial, [3, 0, 0]);
+  // Create "F" and "8" meshes
+  textFMesh = createText("F", textMaterial);
+  text8Mesh = createText("8", textMaterial);
+
+  // Initial positions
+  textFMesh.position.set(-3, 0, 0);
+  text8Mesh.position.set(3, 0, 0);
+
+  // Add to scene
+  scene.add(textFMesh);
+  scene.add(text8Mesh);
 });
 
 // Animation loop
@@ -66,3 +75,14 @@ window.addEventListener("resize", () => {
   camera.updateProjectionMatrix();
   renderer.setSize(window.innerWidth, window.innerHeight);
 });
+
+// Allow dynamic position updates
+function updatePositions(fPosition, eightPosition) {
+  if (textFMesh) textFMesh.position.set(...fPosition); // Update position of "F"
+  if (text8Mesh) text8Mesh.position.set(...eightPosition); // Update position of "8"
+}
+
+// Example of dynamically changing positions
+setTimeout(() => {
+  updatePositions([-5, 0, 0], [5, 0, 0]); // Move "F" and "8" to new positions after 2 seconds
+}, 2000);
